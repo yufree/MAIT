@@ -1,0 +1,13 @@
+04–10-14  First MAIT release.
+
+Package Description: Current tools for Liquid Chromatography and Mass
+    Spectrometry (LC/MS) for metabolomic data cover a limited number
+    of processing steps, whereas online tools are hard to use in a
+    programmable fashion. This paper introduces the Metabolite
+    Automatic Identification Toolkit (MAIT) package, which makes it
+    possible for users to perform metabolomic end-to-end LC/MS data
+    analysis. MAIT is focused on improving the peak annotation stage
+    and provides essential tools to validate statistical analysis
+    results. MAIT generates output files with the statistical results,
+    peak annotation and metabolite identification.
+
