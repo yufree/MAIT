@@ -84,7 +84,7 @@ plotHeatmap<-function (MAIT.object = NULL)
     }
     label <- 1:length(classNum)
     cols <- as.character(cols[-1])
-    paletteCols <- colorRampPalette(c("cyan", "yellow"))(29)
+    paletteCols <- colorRampPalette(c("cyan", "yellow"))(28)
     pvals <- c(0.05, 0.01, 0.001, 1e-04, 1e-05)
 
     cexRows <-   c(tanh(300/length(which(pvalues(MAIT.object)<=pvals[1]))),tanh(300/length(which(pvalues(MAIT.object)<=pvals[2]))),tanh(300/length(which(pvalues(MAIT.object)<=pvals[3]))),tanh(300/length(which(pvalues(MAIT.object)<=pvals[4]))),tanh(300/length(which(pvalues(MAIT.object)<=pvals[5]))))
@@ -116,7 +116,7 @@ plotHeatmap<-function (MAIT.object = NULL)
                 ]), center = TRUE, scale = TRUE)),
                 hclustfun = hclustWard, ColSideColors = cols, 
                 trace = "none", distfun = distCor, cexCol = colLength, 
-                cexRow = as.numeric(paste("0.", 8 - i, sep = "")),breaks=c(seq(-5,-1.5,by=1),seq(-1,1,by=0.1),seq(1,5,by=1)),col=paletteCols,symbreaks=TRUE)
+                cexRow = as.numeric(paste("0.", 8 - i, sep = "")),breaks=c(seq(-5,-1.5,by=1),seq(-1,1,by=0.1),seq(2,5,by=1)),col=paletteCols,symbreaks=TRUE)
             legend("topright", legend=clases, text.col = label, cex = as.numeric(paste("0.", 
                 9 - i, sep = "")))
             dev.off()
@@ -127,7 +127,7 @@ plotHeatmap<-function (MAIT.object = NULL)
                 ]), center = TRUE, scale = TRUE)),
                 hclustfun = hclustWard, ColSideColors = cols, 
                 trace = "none", cexCol = colLength, cexRow = as.numeric(paste("0.", 8 - i, sep = "")),breaks=c(seq(-5,-1.5,by=1)
-                ,seq(-1,1,by=0.1),seq(1,5,by=1)),col=paletteCols,symbreaks=TRUE)
+                ,seq(-1,1,by=0.1),seq(2,5,by=1) + .0001),col=paletteCols,symbreaks=TRUE)
             legend("topright", legend=clases, text.col = label, cex = as.numeric(paste("0.", 
                 9 - i, sep = "")))
             dev.off()
