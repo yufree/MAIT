@@ -1,0 +1,123 @@
+setClass("MAIT.Parameters",
+         representation(
+                        sampleProcessing="list",
+                        peakAnnotation="list",
+                        peakAggregation="list",
+                        sigFeatures="list",
+                        biotransformations="list",
+                        identifyMetabolites="list",
+                        classification="list",
+                        plotPCA="list",
+                        plotPLS="list",
+                        plotHeatmap="list"
+                        ),
+         prototype(
+                        sampleProcessing=list(),
+                        peakAnnotation=list(),
+                        peakAggregation=list(),
+                        sigFeatures=list(),
+                        biotransformations=list(),
+                        identifyMetabolites=list(),
+                        classification=list(),
+                        plotPCA=list(),
+                        plotPLS=list(),
+                        plotHeatmap=list()
+			)
+         );
+
+
+setClass("MAIT.FeatureData",
+         representation(
+                        scores="matrix",
+                        featureID="vector",
+                        featureSigID="vector",
+                        LSDResults="matrix",
+                        models="list",
+                        pvalues="vector",
+			pvaluesCorrection="character",
+                        pcaModel="list",
+                        plsModel="list",
+                        masses="numeric",
+                        rt="numeric",
+                        extendedTable="data.frame"
+                        ),
+         prototype(
+                        scores=matrix(),
+                        featureID=vector(),
+                        featureSigID=vector(),
+                        LSDResults=matrix(),
+                        models=list(),
+                        pvalues=vector(),
+			pvaluesCorrection="",
+                        pcaModel=list(),
+                        plsModel=list(),
+                        masses=numeric(),
+                        rt=numeric(),
+                        extendedTable=data.frame()
+			)
+         );
+
+setClass("MAIT.FeatureInfo",
+         representation(
+                        biotransformations="matrix",
+                        peakAgMethod="character",
+                        metaboliteTable="data.frame"
+                        ),
+         prototype(
+                        biotransformations=matrix(),
+                        peakAgMethod="",
+                        metaboliteTable=data.frame())
+         );
+
+setClass("MAIT.PhenoData",
+         representation(
+                        classes="vector",
+                        classNum="vector",
+			resultsPath="character"
+                        ),
+         prototype(
+                        classes=vector(),
+                        classNum=vector(),
+			resultsPath=""
+			)
+         );
+
+setClass("MAIT.RawData",
+         representation(
+                        parameters="MAIT.Parameters",
+                        data="list"                       
+                        ),
+         prototype(
+                        parameters=new("MAIT.Parameters"),
+                        data=list()         
+			)
+         );
+
+setClass("MAIT.Validation",
+         representation(
+                        ovClassifRatioTable="matrix",
+                        ovClassifRatioData="list",
+                        classifRatioClasses="matrix"                       
+                        ),
+         prototype(
+                        ovClassifRatioTable=matrix(),
+                        ovClassifRatioData=list(),
+                        classifRatioClasses=matrix()
+			)
+         );
+
+setClass("MAIT",
+         representation(
+                        FeatureInfo="MAIT.FeatureInfo",
+                        RawData="MAIT.RawData",
+                        Validation="MAIT.Validation",
+                        PhenoData="MAIT.PhenoData",
+                        FeatureData="MAIT.FeatureData"
+                        ),
+         prototype(
+                        FeatureInfo=new("MAIT.FeatureInfo"),
+                        RawData=new("MAIT.RawData"),
+                        Validation=new("MAIT.Validation"),
+                        PhenoData=new("MAIT.PhenoData"),
+                        FeatureData=new("MAIT.FeatureData"))
+         );
