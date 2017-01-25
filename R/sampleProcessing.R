@@ -1,37 +1,19 @@
-########################################################################################################################################################## 
-##########################################################################################################################################################
-##                                                      |
-##   Metabolite Automatic Identification Toolkit (MAIT) |
+########################################################|
+##   Metabolite Automatic Identifimessageion Toolkit (MAIT) |
 ##                                                      |
 ##                                                      |
 ##   written by Francesc Fernández Albert               |
 ##   contact mail: francesc.fernandez.albert@upc.edu    |
-##   date: 7/29/2013                                   |
+##   date: 7/29/2013                                    |
 ##                                                      |
 ##   SISBIO Group. ESAII Department                     |
-##   Technical University of Catalonia                  |
+##   Technical University of messagealonia                  |
 ##   Nutrition Department                               |
 ##   University of Barcelona                            |
 ##                                                      |
 ##   SISBIO Group. ESAII Department                     |
-##   Universitat Politècnica de Catalunya               |
+##   Universitat Politècnica de messagealunya               |
 ##   ___________________________________________________|
-##
-##
-##   sampleProcessing function takes a set of netCDF files containing LC/MS sample data and performs a peak detection, retention time correction and peak           ##   grouping steps using the xcms package. A MAIT object is created and all the informated is saved in it. Each of these steps are done using the package xcms.    ##   The input variables of the function are:
-##
-##   dataDir:       The netCDF sample files of each class present in the data should be stored in a folder called /(working directory)/Data/(ClassName) replacing   ##                  (ClassName) for the name of the folder where the files are stored.
-##   snThres:       Signal to noise ratio. Setting a high value of this parameter will lead to a higher number of features although they will be more noisy         ##                  (set to 2 by default).
-##   Sigma:         Standard deviation (width) of matched filtration model peak.
-##   mzSlices:      Minimum difference in m/z for peaks with overlapping retention times.
-##   retcorrMethod: Method used to correct the retention times values of the variables. By default is set to "loess".
-##   groupMethod:   Method used to build the group peaks of variables. By default is set to "density".
-##   bwGroup:       Bandwidth (standard deviation or half width at half maximum) of gaussian smoothing kernel to apply to the peak density chromatogram.
-##   mzWidGroup:    Width of overlapping m/z slices to use for creating peak density chromatograms and grouping peaks across samples.
-##   filterMethod:  Filtering method applied in the peak detection step. (Set to "matchedFilter" by default).
-##   rtStep:        Step size to use for profile generation.
-##   nSlaves:       Number of slaves for parallel calculus.
-##   project:       Project folder name under which the results will be saved. This folder will be created in the working directory.
 ##
 ##
 ## All code copyright (c) 2013 UPC/UB
@@ -50,193 +32,199 @@
 ##
 ##    You should have received a copy of the GNU General Public License
 ##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-##
-##    
-########################################################################################################################################################## 
-##########################################################################################################################################################
+#'   sampleProcessing function takes a set of netCDF files containing LC/MS sample data and performs a peak detection, retention time correction and peak grouping steps using the xcms package. A MAIT object is created and all the informated is saved in it. Each of these steps are done using the package xcms.
+#' @param dataDir The netCDF sample files of each class present in the data should be stored in a folder called /(working directory)/Data/(ClassName) replacing (ClassName) for the name of the folder where the files are stored.
+#' @param retcorrMethod Method used to correct the retention times values of the variables. By default is set to "loess".
+#' @param groupMethod  Method used to build the group peaks of variables. By default is set to "density".
+#' @param filterMethod Filtering method applied in the peak detection step. (Set to "matchedFilter" by default).
+#' @param project Project folder name under which the results will be saved. This folder will be created in the working directory.
 
-
-sampleProcessing <- function(dataDir=NULL,
-                             snThres=2,
-                             Sigma=5/2.3548,
-                             mzSlices=0.3,
-                             retcorrMethod="loess",
-                             groupMethod="density",
-                             bwGroup=3,
-                             mzWidGroup=0.25,
-                             filterMethod="matchedFilter",
-                             rtStep=0.03,
-                             nSlaves=0,
-                             minfrac=0.5,
-                             minsamp=1,
-                             peakwidth=c(5,20),
-			     project=NULL,
-                             ppm=10,
-                             family=c("gaussian", "symmetric"),
-                             span = .2,
-                             fwhm=30)
+sampleProcessing <- function(dataDir = NULL,
+                             project = NULL,
+                             index = F,
+                             BPPARAM=SnowParam(workers = 12),
+                             xsmethod = "centWave",
+                             peakwidth = c(14, 25),
+                             ppm = 2.5,
+                             noise = 0,
+                             snthresh = 10,
+                             mzdiff = -0.00395,
+                             prefilter = c(3, 100),
+                             mzCenterFun = "wMean",
+                             integrate = 1,
+                             fitgauss = FALSE,
+                             verbose.columns = FALSE,
+                             BPPARAM = SnowParam(workers = 12),
+                             rmethod = "obiwarp",
+                             plottype = "none",
+                             distFunc = "cor_opt",
+                             profStep = 1,
+                             center = 2,
+                             response = 1,
+                             gapInit = 0.6176,
+                             gapExtend = 2.4,
+                             factorDiag = 2,
+                             factorGap = 1,
+                             localAlignment = 0,
+                             gmethod = "density",
+                             bw = 0.25,
+                             mzwid = 0.0021748,
+                             minfrac = 1,
+                             minsamp = 1,
+                             gmax = 50,
+                             ...)
 {
-
-   
-
-  if (is.null(dataDir)) {
-        stop("No input directory was given")
-    }
-
-    if (is.null(project)) {
-        stop("No project name was included")
-    }
-
-
-
-       parameters <- list(dataDir,
-                             snThres,
-                             Sigma,
-                             mzSlices,
-                             retcorrMethod,
-                             groupMethod,
-                             bwGroup,
-                             mzWidGroup,
-                             filterMethod,
-                             rtStep,
-                             nSlaves,
-			     project,
-                             ppm,
-                             minfrac,
-                             fwhm,
-                             family,
-                             span,
-                             peakwidth)
-  
-       names(parameters) <- c("dataDir",
-                             "snThres",
-                             "Sigma",
-                             "mzSlices",
-                             "retcorrMethod",
-                             "groupMethod",
-                             "bwGroup",
-                             "mzWidGroup",
-                             "filterMethod",
-                             "rtStep",
-                             "nSlaves",
-			     "project",
-                             "ppm",
-                             "minfrac",
-                             "fwhm",
-                             "family",
-                              "span",
-                              "centWave peakwidth")
-  
-       MAIT.object <- new("MAIT")
-
-  
-       MAIT.object@RawData@parameters@sampleProcessing <- parameters
-       writeParameterTable(parameters(MAIT.object),folder=resultsPath(MAIT.object))
-  
-       class <-  list.files(dataDir)
-       classNum <- vector(length=length(class)) 
-       fileList <- list.files(path=paste(dataDir,list.files(path=dataDir),sep="/"),full.names=TRUE)
-
-       for (i in 1:length(class)){
-          classNum[i] <- length(list.files(paste(dataDir,list.files(dataDir)[i],sep="/")))
-       }
-
-  
-       classes <- rep(class,classNum)
-
-    if (length(list.files(dataDir))==1){
-    warning("Warning: Input data only has one class!")
-  }
-	
-	if (is.null(project)){
-		warning("Warning: Project name is empty!")
-	}
-
-##########################################################################################################################################################
-#
-#  The results folder is created if it does not exist
-#
-##########################################################################################################################################################
-
-
-  
-if (!is.null(project)) {
-		
-		resultsPath<-paste("Results",project,sep="_")
-		dir.create(resultsPath)
-
-	}else{
-		
-		resultsPath<-"Results"
-		dir.create(resultsPath)
-		
-	}	
-
-  
-
+        if (is.null(dataDir)) {
+                stop("No input directory was given")
+        }
         
-##########################################################################################################################################################
-#
-#  Peak detection step.
-#
-##########################################################################################################################################################
-
-        if (filterMethod=="matchedFilter"){
-	peaks<- xcmsSet(files=fileList,snthresh=snThres,method=filterMethod,sigma=Sigma,max=3,step=rtStep,mzdiff=mzSlices,sclass=classes,nSlaves=nSlaves,fwhm=fwhm)
-      }
-        if (filterMethod=="centWave"){
-        peaks<- xcmsSet(files=fileList,snthresh=snThres,method=filterMethod,ppm=ppm,mzdiff=mzSlices,sclass=classes,nSlaves=nSlaves,peakwidth=peakwidth)
-      }
-	cat("Peak detection done",fill=TRUE)
-
+        if (is.null(project)) {
+                stop("No project name was included")
+        }
         
-##########################################################################################################################################################
-#
-#  Peak grouping and retention time correction steps.
-#
-##########################################################################################################################################################
-
         
-	groups<- group(peaks,method=groupMethod,bw=bwGroup,mzwid=mzWidGroup,max=50,minfrac=minfrac,minsamp=minsamp)
-  
-  if(retcorrMethod!="none"){
-    
-	retcorr_groups<- retcor(groups,method=retcorrMethod,plottype="deviation",family = family,span=span)
-	cat("Retention time correction done",fill=TRUE)
-	groups<- group(retcorr_groups,method=groupMethod,bw=bwGroup,mzwid=mzWidGroup,max=50)
-	cat("Peak grouping after samples done",fill=TRUE)
         
-  }else{
-    
-        cat("Skipping retention time correction...",fill=TRUE)
-
-  }
-
+        parameters <- list(dataDir,
+                           project,
+                           xsmethod,
+                           peakwidth,
+                           ppm,
+                           prefilter,
+                           rmethod,
+                           bw,
+                           mzwid)
         
-##########################################################################################################################################################
-#
-#  Fill missing peaks step
-#
-##########################################################################################################################################################
-
+        names(parameters) <- c(
+                "dataDir",
+                "project",
+                "filterMethod",
+                "centWave peakwidth",
+                "ppm",
+                "prefilter",
+                "retcorrMethod",
+                "bw",
+                "mzwid"
+        )
         
-	fPeaks<- fillPeaks(groups)
-	cat("Missing Peak integration done",fill=TRUE)
-
-##########################################################################################################################################################
-#
-#  Writting the results in a new MAIT object
-#
-##########################################################################################################################################################
+        MAIT.object <- new("MAIT")
+        
+        
+        MAIT.object@RawData@parameters@sampleProcessing <-
+                parameters
+        writeParameterTable(parameters(MAIT.object), folder = resultsPath(MAIT.object))
+        
+        class <-  list.files(dataDir)
+        classNum <- vector(length = length(class))
+        fileList <-
+                list.files(path = paste(dataDir, list.files(path = dataDir), sep = "/"),
+                           full.names = TRUE)
+        
+        for (i in 1:length(class)) {
+                classNum[i] <-
+                        length(list.files(paste(
+                                dataDir, list.files(dataDir)[i], sep = "/"
+                        )))
+        }
+        
+        
+        classes <- rep(class, classNum)
+        
+        if (length(list.files(dataDir)) == 1) {
+                warning("Warning: Input data only has one class!")
+        }
+        
+        if (is.null(project)) {
+                warning("Warning: Project name is empty!")
+        }
+        #  The results folder is created if it does not exist
+        if (!is.null(project)) {
+                resultsPath <- paste("Results", project, sep = "_")
+                dir.create(resultsPath)
+                
+        } else{
+                resultsPath <- "Results"
+                dir.create(resultsPath)
+                
+        }
+        #  Peak detection step.
+        peaks <-
+                xcmsSet(
+                        files = fileList,
+                        snthresh = snthresh,
+                        method = xsmethod,
+                        ppm = ppm,
+                        peakwidth = peakwidth
+                        method = xsmethod,
+                        snthresh = snthresh,
+                        mzdiff = mzdiff,
+                        BPPARAM = BPPARAM,
+                        noise = noise,
+                        prefilter = prefilter,
+                        mzCenterFun = mzCenterFun,
+                        integrate = integrate,
+                        fitgauss = fitgauss,
+                        verbose.columns = verbose.columns,...
+                )
+        
+        message("Peak detection done", fill = TRUE)
+        #  Peak grouping and retention time correction steps.
+        
+        groups <- group(
+                peaks,
+                method = gmethod,
+                bw = bw,
+                mzwid = mzwid,
+                minfrac = minfrac,
+                minsamp = minsamp,
+                max = gmax
+        )
+        
+        if (rmethod != "none") {
+                retcorr_groups <-
+                        retcor(
+                                groups,
+                                method = rmethod,
+                                plottype = plottype,
+                                distFunc = distFunc,
+                                profStep = profStep,
+                                center = center,
+                                response = response,
+                                gapInit = gapInit,
+                                gapExtend = gapExtend,
+                                factorDiag = factorDiag,
+                                factorGap = factorGap,
+                                localAlignment = localAlignment
+                        )
+                message("Retention time correction done", fill = TRUE)
+                groups <-
+                        group(
+                                retcorr_groups,
+                                method = gmethod,
+                                bw = bw,
+                                mzwid = mzwid,
+                                minfrac = minfrac,
+                                minsamp = minsamp,
+                                max = gmax
+                        )
+                message("Peak grouping after samples done", fill = TRUE)
+                
+        } else{
+                message("Skipping retention time correction...", fill = TRUE)
+                
+        }
+        #  Fill missing peaks step
+        
+        fPeaks <- fillPeaks(groups,BPPARAM = BPPARAM)
+        message("Missing Peak integration done", fill = TRUE)
+        
+        #  Writting the results in a new MAIT object
         fPeaks <- list(fPeaks)
         names(fPeaks) <- "xcmsSet"
-
-  
-        MAIT.object@RawData@data <- fPeaks        
+        
+        MAIT.object@RawData@data <- fPeaks
         MAIT.object@PhenoData@classes <- class
         MAIT.object@PhenoData@classNum <- classNum
         MAIT.object@PhenoData@resultsPath <- resultsPath
-
+        
         return(MAIT.object)
 }
-
